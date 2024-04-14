@@ -22,6 +22,7 @@ namespace MovieBaseBack.Controllers
         private RoleManager<IdentityRole> roleManager;
 
         private MovieDbContext _context;
+   
 
         public RegisterController(UserManager<AppUser> userMngr, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManagerr, MovieDbContext context)
         {
@@ -32,15 +33,57 @@ namespace MovieBaseBack.Controllers
         }
 
 
+        [HttpPost("LogIn")]
         public async Task<IActionResult> LogIn(Log login)
         {
             if (ModelState.IsValid)
             {
                 var result = await SignInManager.PasswordSignInAsync(login.UserName, login.Password, login.RememberMe, lockoutOnFailure: false);
 
+                if (result.Succeeded)
+                {
+                    int ts = _context.Users.Where(t => t.UserName == login.UserName).Select(x => x.UserID).FirstOrDefault();
+                    string name = _context.Users.Where(t => t.UserName == login.UserName).Select(x => x.UserName).FirstOrDefault();
+                    //TempData["UserID"] = ts;
+                    //TempData["UserNamePass"] = name;
+                    if (!string.IsNullOrEmpty(login.ReturnUrl) && Url.IsLocalUrl(login.ReturnUrl))
+                    {
 
+
+                        return Redirect(login.ReturnUrl);
+
+                    }
+
+                    else
+                    {
+                        var use = await userManager.FindByNameAsync(login.UserName);
+
+                        var role = await userManager.GetRolesAsync(use);
+
+                        switch (role.FirstOrDefault())
+                        {
+                            case "Standard":
+                                {
+
+                                    return Ok(result.Succeeded);
+                                }
+
+
+
+                        }
+                    }
+                }
+               
             }
-            return Ok();
+
+            return Unauthorized();
+        }
+
+        [HttpGet]
+         public IActionResult LogIn(string returnURL = "")
+        {
+            var model = new Log { ReturnUrl = returnURL };
+            return Unauthorized();
         }
 
 
