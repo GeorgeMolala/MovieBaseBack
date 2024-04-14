@@ -30,7 +30,11 @@ namespace MovieBaseBack
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<MovieDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("MovieContext")));
-            services.AddIdentity<AppUser, IdentityRole>()
+            services.AddIdentity<AppUser, IdentityRole>(options=> {
+                options.Password.RequiredLength = 6;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireDigit = false;
+            })
                      .AddEntityFrameworkStores<MovieDbContext>()
                     .AddDefaultTokenProviders();
             services.AddControllers();
