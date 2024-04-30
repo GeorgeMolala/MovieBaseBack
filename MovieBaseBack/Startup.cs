@@ -14,6 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MovieBaseBack
 {
@@ -24,30 +27,70 @@ namespace MovieBaseBack
             Configuration = configuration;
         }
 
+       // public string MyAllowedCORS = "_MyAllowedCORS";
+
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            
+            services.AddCors(options =>
+            options.AddPolicy("MyAllowedCORS", policy =>
+            {
+
+                policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod().AllowCredentials().SetIsOriginAllowed((host)=>true);
+            })
+            );
+
             services.AddDbContext<MovieDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("MovieContext")));
-        
-            services.AddIdentity<AppUser, IdentityRole>(options=> {
+
+
+
+            services.AddIdentity<AppUser, IdentityRole>(options =>
+            {
                 options.Password.RequiredLength = 6;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireDigit = false;
             })
-                     .AddEntityFrameworkStores<MovieDbContext>()
-                    .AddDefaultTokenProviders();
+                     .AddEntityFrameworkStores<MovieDbContext>();
+                   // .AddDefaultTokenProviders();
             services.AddControllers();
+           
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MovieBaseBack", Version = "v1" });
             });
+
+            services.AddAuthentication(options=> 
+                  {
+                      options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                      options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                      options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                  })
+                .AddJwtBearer(options=> 
+                {
+                    options.SaveToken = true;
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidIssuer = Configuration["JWT:ValidIssuer"],
+                        ValidAudience = Configuration["JWT:ValidAudience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
+
+                    };
+                });
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            
+          
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -56,9 +99,11 @@ namespace MovieBaseBack
             }
 
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles();
             app.UseRouting();
-
+            app.UseCors("MyAllowedCORS");
+            app.UseAuthentication();
+            
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
