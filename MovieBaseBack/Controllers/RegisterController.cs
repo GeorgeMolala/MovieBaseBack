@@ -70,6 +70,25 @@ namespace MovieBaseBack.Controllers
                         var authClaims = new List<Claim>
                         {
                             new Claim(ClaimTypes.Name, use.UserName),
+                            new Claim(ClaimTypes.NameIdentifier, use.Id),
+                            new Claim("JWTID", Guid.NewGuid().ToString()),
+                        };
+
+
+
+                        //switch (role.FirstOrDefault())
+                        //{
+                        //    case "Standard":
+                        //        {
+
+                        //            return Ok(result.Succeeded);
+                        //        }
+                        //}
+
+                        foreach (var userRole in role)
+                        {
+                            authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                            new Claim(ClaimTypes.Name, use.UserName),
                             
                             new Claim(ClaimTypes.NameIdentifier, use.Id),
                             new Claim("JWTID", Guid.NewGuid().ToString()),
@@ -93,9 +112,11 @@ namespace MovieBaseBack.Controllers
                         }
 
                         var token = GenerateNewJsonWebToken(authClaims);
+                        var token = GenerateNewJsonWebToken(authClaims);
 
                         //return JsonResult;
 
+                        return Ok(token);
                         return Ok(new { Token = token});
                     }
                 }

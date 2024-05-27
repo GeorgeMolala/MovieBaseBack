@@ -101,6 +101,8 @@ namespace MovieBaseBack
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseAuthentication();
+            
             app.UseCors("MyAllowedCORS");
             app.UseAuthentication();
             
